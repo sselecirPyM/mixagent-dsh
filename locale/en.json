@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "MixAgent",
+    "description": "A cheap scout explores the code, a flagship planner writes one Markdown plan, and a cheap executor applies it in a fresh session. Normal conversations are untouched until you enter MixAgent mode with /mix on; models are set on the plugin page."
+  }
+}

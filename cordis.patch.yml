@@ -1,0 +1,71 @@
+# MixAgent bundle: inserts the scout -> planner -> executor Host plugin and the
+# `mix` agent preset.
+#
+# Pick MixAgent in the New Session preset control to start a conversation already in
+# MixAgent mode. Any other conversation stays normal until /mix on is used; /mix off
+# leaves MixAgent mode. Set the Host row's `enabled: true` only if every new session
+# should start in MixAgent mode.
+#
+# The three model routes and their thinking levels are set on the plugin page
+# (Plugins -> MixAgent -> Models) and are saved as volatile config, so they take effect
+# without a restart. They can still be written here, for example:
+#   scoutModel: deepseek-account/deepseek-flash
+#   plannerModel: code-gemini/gemini-4-argon
+#   plannerThinking: high
+- insert:
+    - id: mixagent-dsh
+      name: mixagent-dsh
+      config:
+        enabled: false
+    # The preset mounts only the tools all three roles need: the scout reads and searches,
+    # the executor edits, writes, and runs the plan's commands, and compaction keeps a long
+    # executor session inside its context window. The Host row above supplies the prompt,
+    # the handoff/discard tools, the read-only guard, and the model routing.
+    - id: preset-mix
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: mix
+        name: MixAgent
+        description: Cheap scout explores, the flagship planner writes the plan, a cheap executor applies it.
+        order: 5
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: You are a coding agent powered by the {{model}} model.
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+          - id: tool-bash
+            name: '@deepseek-ai/dsh-tool-bash'
+            disabled: !!js process.platform === 'win32'
+          - id: tool-pwsh
+            name: '@deepseek-ai/dsh-tool-pwsh'
+            disabled: !!js process.platform !== 'win32'
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+            config:
+              # The scout guard blocks edit/write; apply_patch would bypass that guard.
+              applyPatch: false
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+              toolResultPruner: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+              - id: tool-result-pruner
+                name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                config:
+                  thresholdChars: 8192
+                  headChars: 4096
+                  tailChars: 1024

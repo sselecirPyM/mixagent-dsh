@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "MixAgent 三段式",
+    "description": "便宜模型探查代码，旗舰模型只写修改方案，便宜模型在全新 session 里执行。默认不影响普通对话，用 /mix on 进入 MixAgent 模式；模型在插件页面设置。"
+  }
+}
