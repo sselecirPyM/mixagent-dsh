@@ -186,14 +186,45 @@ function parseRevisions(join) {
 	return revisions.map((r) => ({ path: r.path, kind: r.kind, notes: r.lines.join("\n").trim() })).filter((r) => r.notes);
 }
 
+/** A join placeholder heading that stands for a sub-plan's section: "### `path` — from S1" (or "from S1, S2"). */
+const FROM_HEADING = /^###\s+`([^`]+)`\s*[—–-]\s*from\s+(S\d+(?:\s*(?:[,，、&+/]|and)\s*S\d+)*)/i;
+
+/**
+ * Replaces every "### `path` — from Sx" placeholder in a join that wrote its own "## Changes" with that
+ * sub-plan's section(s) for the file, verbatim. If the named sub-plan has no section for the file, every
+ * sub-plan's section for it is used; a placeholder no sub-plan can fill is left as is.
+ */
+function expandFromPlaceholders(join, subPlans) {
+	const filesOf = new Map(subPlans.map((s) => [s.id.toUpperCase(), parsePlanParts(s.plan).files]));
+	const sectionsFor = (path, ids) => {
+		const pick = (id) =>
+			(filesOf.get(id) ?? [])
+				.filter((f) => f.path === path)
+				.map((f) => {
+					const [heading, ...body] = f.text.split("\n");
+					return [`${heading} (${id})`, ...body].join("\n");
+				});
+		const named = ids.flatMap(pick);
+		return named.length > 0 ? named : [...filesOf.keys()].flatMap(pick);
+	};
+	const out = [];
+	forEachLine(join, (line, outsideFence) => {
+		const from = outsideFence && line.match(FROM_HEADING);
+		const parts = from ? sectionsFor(normalizePlanPath(from[1]), [...from[2].matchAll(/S\d+/gi)].map((m) => m[0].toUpperCase())) : [];
+		out.push(parts.length > 0 ? parts.join("\n\n") : line);
+	});
+	return out.join("\n");
+}
+
 /**
  * Builds the final fork-join plan, so the join planner never copies sub-plans: every sub-plan file section as
  * written (grouped by file), followed by the join's revision notes for that file, then the join's Tasks, Commands
- * and Answer. A join that wrote its own "## Changes" anyway is used as is.
+ * and Answer. A join that wrote its own "## Changes" anyway is used as is, except that its
+ * "### `path` — from Sx" placeholders are replaced by the sub-plans' sections.
  */
 export function assembleJoinPlan(join, subPlans) {
 	const { sections } = parsePlanParts(join);
-	if (sections.has("changes")) return join;
+	if (sections.has("changes")) return expandFromPlaceholders(join, subPlans);
 	const byPath = new Map();
 	for (const s of subPlans) {
 		for (const f of parsePlanParts(s.plan).files) {

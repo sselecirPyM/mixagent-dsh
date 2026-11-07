@@ -116,3 +116,21 @@ test("assembles a join plan from sub-plans and revision notes", () => {
 	assert.match(final, /Revisions by the join planner/);
 	assert.match(final, /## Commands\nnpm test/);
 });
+
+test("expands `from Sx` placeholders in a join that wrote its own Changes", () => {
+	const subPlans = [
+		{ id: "S1", goal: "a", plan: "## Changes\n\n### `src/a.ts` — edit\nAAA\n" },
+		{ id: "S2", goal: "b", plan: "## Changes\n\n### `src/b.ts` — create\nBBB\n" },
+	];
+	const join =
+		"## Summary\nall\n\n## Changes\n\n### `src/a.ts` — from S1\n\n### `src/b.ts` — from S1\n\n### `src/c.ts` — edit\nCCC\n\n" +
+		"## Tasks\n- T1: `src/a.ts`, `src/c.ts` — a\n- T2: `src/b.ts` — b\n\n## Commands\nnpm test\n";
+	const final = assembleJoinPlan(join, subPlans);
+	assert.match(final, /### `src\/a\.ts` — edit \(S1\)\nAAA/);
+	// S1 has no section for b.ts: falls back to the sub-plan that does.
+	assert.match(final, /### `src\/b\.ts` — create \(S2\)\nBBB/);
+	assert.match(final, /### `src\/c\.ts` — edit\nCCC/);
+	assert.doesNotMatch(final, /from S\d/);
+	assert.equal(countPlanChanges(final), 3);
+	assert.equal(splitPlan(final).tasks.length, 2);
+});
