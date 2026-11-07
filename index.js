@@ -128,7 +128,7 @@ export const Config = Schema.object({
 	plannerMaxTokens: int(32000, 256, 1_000_000, "Max output tokens for the planner call."),
 	maxToolOutputChars: int(20000, 1000, 10_000_000, "Per tool-output character cap inside the planner package."),
 	maxFileChars: int(60000, 1000, 10_000_000, "Per attached-file character cap inside the planner package."),
-	maxPackageChars: int(300000, 1000, 10_000_000, "Total character cap for the planner package."),
+	maxPackageChars: int(600000, 1000, 10_000_000, "Total character cap for the planner package."),
 	maxContextRounds: int(3, 0, 20, "How many times the planner may send the scout back for more context per request."),
 	scoutBashGuard: bool(true, "Block shell commands that look like they modify state while scouting."),
 	autoApply: bool(true, "Apply the plan's exact file changes directly before the executor starts."),
@@ -166,7 +166,7 @@ const DEFAULTS = {
 	/** Per attached-file character cap inside the planner package. */
 	maxFileChars: 60000,
 	/** Total character cap for the planner package. */
-	maxPackageChars: 300000,
+	maxPackageChars: 600000,
 	/** How many times the planner may send the scout back for more context per request. */
 	maxContextRounds: 3,
 	/** Block shell commands that look like they modify state while scouting. */

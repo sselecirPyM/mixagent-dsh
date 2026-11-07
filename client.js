@@ -57,7 +57,7 @@ window.__ModuleLoader__.load({
 				fields: [
 					{ key: "maxToolOutputChars", kind: "int", def: 20000, min: 1000, max: 10000000 },
 					{ key: "maxFileChars", kind: "int", def: 60000, min: 1000, max: 10000000 },
-					{ key: "maxPackageChars", kind: "int", def: 300000, min: 1000, max: 10000000 },
+					{ key: "maxPackageChars", kind: "int", def: 600000, min: 1000, max: 10000000 },
 					{ key: "maxPlannerImages", kind: "int", def: 10, min: 0, max: 100 },
 				],
 			},
